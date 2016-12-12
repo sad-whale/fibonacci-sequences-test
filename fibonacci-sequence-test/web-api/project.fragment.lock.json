@@ -1,0 +1,25 @@
+{
+  "version": 2,
+  "exports": {
+    "common-types/1.0.0": {
+      "type": "project",
+      "framework": ".NETFramework,Version=v4.5.2",
+      "compile": {
+        "bin/Debug/common-types.dll": {}
+      },
+      "runtime": {
+        "../packages/EasyNetQ.0.63.5.454/lib/net45/EasyNetQ.dll": {},
+        "../packages/Newtonsoft.Json.9.0.1/lib/net45/Newtonsoft.Json.dll": {},
+        "../packages/RabbitMQ.Client.3.6.0/lib/net45/RabbitMQ.Client.dll": {},
+        "bin/Debug/common-types.dll": {}
+      },
+      "contentFiles": {
+        "bin/Debug/common-types.pdb": {
+          "buildAction": "None",
+          "codeLanguage": "any",
+          "copyToOutput": true
+        }
+      }
+    }
+  }
+}

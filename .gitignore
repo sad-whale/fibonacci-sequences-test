@@ -3,3 +3,9 @@
 ################################################################################
 
 /fibonacci-sequence-test/common-types/bin/Debug
+/fibonacci-sequence-test/common-types/obj/Debug
+/fibonacci-sequence-test/master-app/obj/Debug
+/fibonacci-sequence-test/master-app/bin/Debug
+/fibonacci-sequence-test/web-api/bin/Debug/net452
+/fibonacci-sequence-test/web-api/obj/Debug/net452
+/fibonacci-sequence-test/packages
