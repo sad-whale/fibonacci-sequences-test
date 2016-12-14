@@ -20,8 +20,9 @@ namespace web_api.Controllers
         }
 
         [HttpPost("api/number")]
-        public void Post([FromBody]FibonacciNumber value)
+        public async void Post([FromBody]FibonacciNumber value)
         {
+            await Task.Delay(2000);
             var next = _processor.GetNext(value);
             _sender.Send(next);
         }

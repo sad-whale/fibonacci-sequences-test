@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace master_app
@@ -28,11 +29,13 @@ namespace master_app
             var containerBuilder = new ContainerBuilder();
             containerBuilder.Register<HttpSender>(x => new HttpSender("http://localhost:5000/api/number")).As<INumberSender>();
             containerBuilder.Register(x => RabbitHutch.CreateBus("host=localhost")).As<IBus>().SingleInstance();
-            containerBuilder.RegisterType<NumberProcessor>().As<INumberProcessor>();
+            containerBuilder.RegisterType<NumberProcessor>().As<INumberProcessor>().SingleInstance();
             containerBuilder.RegisterType<SequenceWorker>().As<SequenceWorker>();
             ApplicationContainer = containerBuilder.Build();
 
-            List<SequenceWorker> workers = new List<SequenceWorker>();
+            SequenceWorker worker = ApplicationContainer.Resolve<SequenceWorker>();
+            IBus bus = ApplicationContainer.Resolve<IBus>();
+
             int sequencesNumber;
 
             if (int.TryParse(Configuration["sequencesNumber"], out sequencesNumber))
@@ -40,14 +43,9 @@ namespace master_app
                 for (int i = 0; i < sequencesNumber; i++)
                 {
                     string guid = Guid.NewGuid().ToString();
-                    Task.Run(() =>
-                    {
-                        var worker = ApplicationContainer.Resolve<SequenceWorker>();
-                        worker.StartSequence(guid);
-                        workers.Add(worker);
-                    });
+                    worker.StartSequence(guid);
                 }
-                Console.WriteLine($"{sequencesNumber} tasks started.");
+                Console.WriteLine($"{sequencesNumber} sequences started. {Thread.CurrentThread.ManagedThreadId}");
             }
             else
             {
@@ -56,6 +54,8 @@ namespace master_app
 
             Console.WriteLine("Press enter to exit.");
             Console.ReadLine();
+            worker.Dispose();
+            bus.Dispose();
         }
     }
 

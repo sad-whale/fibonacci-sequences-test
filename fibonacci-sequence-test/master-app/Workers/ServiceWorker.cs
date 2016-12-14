@@ -5,15 +5,16 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace master_app.Workers
 {
     public class SequenceWorker : IDisposable
     {
-        private string _sequenceId;
+        private HashSet<IDisposable> _receivers;
+
         private IBus _bus;
-        private IDisposable _messageReceiver;
         private INumberProcessor _processor;
         private INumberSender _sender;
 
@@ -22,34 +23,33 @@ namespace master_app.Workers
             _bus = bus;
             _processor = processor;
             _sender = sender;
+            _receivers = new HashSet<IDisposable>();
         }
 
-        public void StartSequence(string seqNum)
+        public Task StartSequence(string seqNum)
         {
-            _sequenceId = seqNum;
-            _messageReceiver = _bus.Receive<FibonacciNumber>(seqNum, number =>
+            return Task.Run(() =>
             {
-                Console.WriteLine($"{number.SequenceId}: {number.Number}");
-                var next = _processor.GetNext(number);
-                Task.Delay(2000).Wait();
-                Console.WriteLine($"{next.SequenceId}: {next.Number}");
-                _sender.Send(next);
-            });
+                _receivers.Add(_bus.Receive<FibonacciNumber>(seqNum, number => Task.Run(()=>
+                {
+                    Console.WriteLine($"{number.SequenceId}: {number.Number} {Thread.CurrentThread.ManagedThreadId}");
+                    var next = _processor.GetNext(number);
+                    Console.WriteLine($"{next.SequenceId}: {next.Number} {Thread.CurrentThread.ManagedThreadId}");
+                    _sender.Send(next);
+                })));
 
-            var first = _processor.GetNext(new FibonacciNumber() { SequenceId = seqNum, Number = 1 });
-            Console.WriteLine($"{first.SequenceId}: {first.Number}");
-            _sender.Send(first);
+                var first = _processor.GetNext(new FibonacciNumber() { SequenceId = seqNum, Number = 1 });
+                Console.WriteLine($"{first.SequenceId}: {first.Number} {Thread.CurrentThread.ManagedThreadId}");
+                _sender.Send(first);
+            });            
         }
-
-        private void Print()
-        {
-            Console.Write(_sequenceId);
-        }
-
+        
         public void Dispose()
         {
-            if (_messageReceiver != null)
-                _messageReceiver.Dispose();
+            foreach (var receiver in _receivers)
+            {
+                receiver.Dispose();
+            }
         }
     }
 }
