@@ -7,6 +7,7 @@ using common_types.Models;
 
 namespace common_types.Services
 {
+    //реализация генерации нового числа, основанной на хранении предыдущих в словаре
     public class NumberProcessor : INumberProcessor
     {
         private ConcurrentDictionary<string, double> _prevNumbers;

@@ -9,6 +9,7 @@ using System.Text;
 
 namespace common_types.Services
 {
+    //реализация отправителя посредством httpclient
     public class HttpSender : INumberSender
     {
         private string _uri;
@@ -27,7 +28,6 @@ namespace common_types.Services
                     string content = JsonConvert.SerializeObject(number);
                     msg.Content = new StringContent(content, Encoding.UTF8, "application/json");
                     client.SendAsync(msg).Wait();
-                    //client.PostAsync(_uri, new StringContent(JsonConvert.SerializeObject(new { value = number }), Encoding.UTF8, "application/json")).Wait();
                 }
             }
         }

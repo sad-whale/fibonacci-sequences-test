@@ -7,6 +7,7 @@ using EasyNetQ;
 
 namespace common_types.Services
 {
+    //реализация отправителя посредством rabbit и easynetq
     public class RabbitSender : INumberSender
     {
         private IBus _bus;

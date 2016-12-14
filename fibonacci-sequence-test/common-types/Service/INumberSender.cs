@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace common_types.Services
 {
+    //интерфейс отправителя сообщения
     public interface INumberSender
     {
         void Send(FibonacciNumber number);

@@ -25,14 +25,17 @@ namespace master_app
 
         public static void Main(string[] args)
         {
+            //создание логгера nlog
             _logger = LogManager.GetCurrentClassLogger();
 
+            //создание объекта конфигурации на основе json файла
             var builder = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
             .AddJsonFile("appsettings.json", optional: true);
 
             Configuration = builder.Build();
 
+            //конфигурирование autofac контейнера
             var containerBuilder = new ContainerBuilder();
             containerBuilder.Register<HttpSender>(x => new HttpSender("http://localhost:5000/api/number")).As<INumberSender>();
             containerBuilder.Register(x => RabbitHutch.CreateBus("host=localhost")).As<IBus>().SingleInstance();
@@ -40,16 +43,19 @@ namespace master_app
             containerBuilder.RegisterType<SequenceWorker>().As<SequenceWorker>();
             ApplicationContainer = containerBuilder.Build();
 
+            //резолвим воркер и шину рэббита
             SequenceWorker worker = ApplicationContainer.Resolve<SequenceWorker>();
             IBus bus = ApplicationContainer.Resolve<IBus>();
             
             int sequencesNumber;
-
+            //считываем из конфига количество последовательностей и запускаем
             if (int.TryParse(Configuration["sequencesNumber"], out sequencesNumber))
             {
                 for (int i = 0; i < sequencesNumber; i++)
                 {
+                    //в качестве идентификаторов последовательности используются гуиды
                     string guid = Guid.NewGuid().ToString();
+                    //запуск расчета последовательности
                     worker.StartSequence(guid);
                     Task.Delay(1000).Wait();
                 }

@@ -15,6 +15,7 @@ namespace web_api.Controllers
         private INumberSender _sender;
         private INumberProcessor _processor;
 
+        //внедрение зависимостей
         public FibonacciController(INumberSender sender, INumberProcessor processor, ILoggerFactory loggerFactory)
         {
             _sender = sender;
@@ -27,8 +28,10 @@ namespace web_api.Controllers
         {
             _logger.LogInformation($"{value.SequenceId}: Received {value.Number}");
             await Task.Delay(1000);
+            //генерируем новое число на основе полученного
             var next = _processor.GetNext(value);
             _logger.LogInformation($"{value.SequenceId}: Generated {value.Number}");
+            //и отправляем его
             _sender.Send(next);
         }
     }

@@ -21,6 +21,7 @@ namespace master_app.Workers
         private INumberProcessor _processor;
         private INumberSender _sender;
 
+        //внедряем зависимости
         public SequenceWorker(IBus bus, INumberProcessor processor, INumberSender sender)
         {
             _bus = bus;
@@ -30,18 +31,23 @@ namespace master_app.Workers
             _logger = LogManager.GetCurrentClassLogger();
         }
 
+        //запуск расчета последовательности с заданным идентификатором
         public Task StartSequence(string seqNum)
         {
             return Task.Run(() =>
             {
+                //подписываемся на очередь рэббита с идентификатором, соответствующим идентификатору последовательности
+                //на каждое сообщение генерится таск
                 var receiver = _bus.Receive<FibonacciNumber>(seqNum, number => Task.Run(()=>
                 {
                     _logger.Info($"{number.SequenceId}: Generated {number.Number}");
+                    //генерируем следующее число
                     var next = _processor.GetNext(number);
                     _logger.Info($"{next.SequenceId}: Received {next.Number}");
                     try
                     {
                         Task.Delay(1000).Wait();
+                        //отправляем
                         _sender.Send(next);
                     }
                     catch (Exception ex)
@@ -50,10 +56,12 @@ namespace master_app.Workers
                     }
                 }));
 
+                //генерируем начало последоавтельности
                 var first = _processor.GetNext(new FibonacciNumber() { SequenceId = seqNum, Number = 1 });
                 _logger.Info($"{first.SequenceId}: Generated {first.Number}");
                 try
                 {
+                    //и отправляем
                     _sender.Send(first);
                     _receivers.Add(receiver);
                 }

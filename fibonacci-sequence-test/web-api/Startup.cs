@@ -37,6 +37,7 @@ namespace web_api
             // Add framework services.
             services.AddMvc();
 
+            //конфигурируем autofac контейнер
             var builder = new ContainerBuilder();
             
             builder.Register(x => RabbitHutch.CreateBus("host=localhost")).As<IBus>().SingleInstance();
@@ -55,8 +56,9 @@ namespace web_api
         {
             //loggerFactory.AddConsole(Configuration.GetSection("Logging"));
             loggerFactory.AddDebug();
+            //подключаем nlog
             loggerFactory.AddNLog();
-
+            //конфигурируем nlog
             env.ConfigureNLog("nlog.config");
 
             app.UseMvc();
