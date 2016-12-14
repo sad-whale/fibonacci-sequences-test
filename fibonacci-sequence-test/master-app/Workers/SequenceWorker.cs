@@ -7,11 +7,14 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using NLog;
 
 namespace master_app.Workers
 {
     public class SequenceWorker : IDisposable
     {
+        private Logger _logger;
+
         private HashSet<IDisposable> _receivers;
 
         private IBus _bus;
@@ -24,23 +27,41 @@ namespace master_app.Workers
             _processor = processor;
             _sender = sender;
             _receivers = new HashSet<IDisposable>();
+            _logger = LogManager.GetCurrentClassLogger();
         }
 
         public Task StartSequence(string seqNum)
         {
             return Task.Run(() =>
             {
-                _receivers.Add(_bus.Receive<FibonacciNumber>(seqNum, number => Task.Run(()=>
+                var receiver = _bus.Receive<FibonacciNumber>(seqNum, number => Task.Run(()=>
                 {
-                    Console.WriteLine($"{number.SequenceId}: {number.Number} {Thread.CurrentThread.ManagedThreadId}");
+                    _logger.Info($"{number.SequenceId}: Generated {number.Number}");
                     var next = _processor.GetNext(number);
-                    Console.WriteLine($"{next.SequenceId}: {next.Number} {Thread.CurrentThread.ManagedThreadId}");
-                    _sender.Send(next);
-                })));
+                    _logger.Info($"{next.SequenceId}: Received {next.Number}");
+                    try
+                    {
+                        Task.Delay(1000).Wait();
+                        _sender.Send(next);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.Error(ex, $"{next.SequenceId}: Failed to send the number");
+                    }
+                }));
 
                 var first = _processor.GetNext(new FibonacciNumber() { SequenceId = seqNum, Number = 1 });
-                Console.WriteLine($"{first.SequenceId}: {first.Number} {Thread.CurrentThread.ManagedThreadId}");
-                _sender.Send(first);
+                _logger.Info($"{first.SequenceId}: Generated {first.Number}");
+                try
+                {
+                    _sender.Send(first);
+                    _receivers.Add(receiver);
+                }
+                catch (Exception ex)
+                {
+                    receiver.Dispose();
+                    _logger.Error(ex, $"{seqNum}: Failed to send the number");
+                }
             });            
         }
         

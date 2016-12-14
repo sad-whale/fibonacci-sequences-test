@@ -3,6 +3,9 @@ using common_types.Services;
 using EasyNetQ;
 using master_app.Workers;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using NLog.Extensions.Logging;
+using NLog;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -18,8 +21,12 @@ namespace master_app
         public static IConfigurationRoot Configuration;
         public static Autofac.IContainer ApplicationContainer;
 
+        private static Logger _logger;
+
         public static void Main(string[] args)
         {
+            _logger = LogManager.GetCurrentClassLogger();
+
             var builder = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
             .AddJsonFile("appsettings.json", optional: true);
@@ -35,7 +42,7 @@ namespace master_app
 
             SequenceWorker worker = ApplicationContainer.Resolve<SequenceWorker>();
             IBus bus = ApplicationContainer.Resolve<IBus>();
-
+            
             int sequencesNumber;
 
             if (int.TryParse(Configuration["sequencesNumber"], out sequencesNumber))
@@ -44,12 +51,13 @@ namespace master_app
                 {
                     string guid = Guid.NewGuid().ToString();
                     worker.StartSequence(guid);
+                    Task.Delay(1000).Wait();
                 }
-                Console.WriteLine($"{sequencesNumber} sequences started. {Thread.CurrentThread.ManagedThreadId}");
+                _logger.Info($"{sequencesNumber} sequences started.");
             }
             else
             {
-                Console.WriteLine("Can not read number of sequences from config file.");
+                _logger.Error("Can not read number of sequences from config file.");
             }
 
             Console.WriteLine("Press enter to exit.");

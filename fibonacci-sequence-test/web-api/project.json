@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "Autofac.Extensions.DependencyInjection": "4.0.0",
     "EasyNetQ": "0.63.5.454",
     "Microsoft.AspNetCore.Mvc": "1.0.1",
     "Microsoft.AspNetCore.Routing": "1.0.1",
@@ -11,7 +12,9 @@
     "Microsoft.Extensions.Logging": "1.0.0",
     "Microsoft.Extensions.Logging.Console": "1.0.0",
     "Microsoft.Extensions.Logging.Debug": "1.0.0",
-    "Microsoft.Extensions.Options.ConfigurationExtensions": "1.0.0"
+    "Microsoft.Extensions.Options.ConfigurationExtensions": "1.0.0",
+    "NLog.Config": "4.3.11",
+    "NLog.Extensions.Logging": "1.0.0-rtm-alpha5"
   },
 
   "tools": {

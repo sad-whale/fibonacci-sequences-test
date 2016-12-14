@@ -9,6 +9,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using EasyNetQ;
 using common_types.Services;
+using Autofac;
+using Autofac.Extensions.DependencyInjection;
+using NLog.Extensions.Logging;
 
 namespace web_api
 {
@@ -24,23 +27,37 @@ namespace web_api
             Configuration = builder.Build();
         }
 
+        public Autofac.IContainer ApplicationContainer { get; private set; }
         public IConfigurationRoot Configuration { get; }
 
         // This method gets called by the runtime. Use this method to add services to the container.
-        public void ConfigureServices(IServiceCollection services)
+        public System.IServiceProvider ConfigureServices(IServiceCollection services)
         {
-            services.AddSingleton<IBus, IBus>(provider => RabbitHutch.CreateBus("host=localhost"));
-            services.AddSingleton<INumberProcessor, NumberProcessor>();
-            services.AddTransient<INumberSender, RabbitSender>();
+            
             // Add framework services.
             services.AddMvc();
+
+            var builder = new ContainerBuilder();
+            
+            builder.Register(x => RabbitHutch.CreateBus("host=localhost")).As<IBus>().SingleInstance();
+            builder.RegisterType<NumberProcessor>().As<INumberProcessor>().SingleInstance();
+            builder.RegisterType<RabbitSender>().As<INumberSender>();
+            builder.Populate(services);
+
+            this.ApplicationContainer = builder.Build();
+
+            // Create the IServiceProvider based on the container.
+            return new AutofacServiceProvider(this.ApplicationContainer);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
         {
-            loggerFactory.AddConsole(Configuration.GetSection("Logging"));
+            //loggerFactory.AddConsole(Configuration.GetSection("Logging"));
             loggerFactory.AddDebug();
+            loggerFactory.AddNLog();
+
+            env.ConfigureNLog("nlog.config");
 
             app.UseMvc();
         }

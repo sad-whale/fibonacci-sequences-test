@@ -5,25 +5,30 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using common_types.Models;
 using common_types.Services;
+using Microsoft.Extensions.Logging;
 
 namespace web_api.Controllers
 {
     public class FibonacciController : Controller
     {
+        private ILogger _logger;
         private INumberSender _sender;
         private INumberProcessor _processor;
 
-        public FibonacciController(INumberSender sender, INumberProcessor processor)
+        public FibonacciController(INumberSender sender, INumberProcessor processor, ILoggerFactory loggerFactory)
         {
             _sender = sender;
             _processor = processor;
+            _logger = loggerFactory.CreateLogger(GetType());
         }
 
         [HttpPost("api/number")]
         public async void Post([FromBody]FibonacciNumber value)
         {
-            await Task.Delay(2000);
+            _logger.LogInformation($"{value.SequenceId}: Received {value.Number}");
+            await Task.Delay(1000);
             var next = _processor.GetNext(value);
+            _logger.LogInformation($"{value.SequenceId}: Generated {value.Number}");
             _sender.Send(next);
         }
     }
